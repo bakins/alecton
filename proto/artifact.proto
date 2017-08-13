@@ -1,0 +1,45 @@
+syntax = "proto3";
+package darrell.api;
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+option go_package = "api";
+
+message Artifact {
+    string name = 1 [(validator.field) = {msg_exists : true}];
+}
+
+message ArtifactBuild {
+    string artifact = 1;
+    string version = 2 ;
+    string branch = 3;
+    string image = 4;
+}
+
+message ArtifactList {
+    repeated Artifact items = 1;
+}
+
+message ArtifactBuildList {
+    repeated ArtifactBuild items = 1;
+}
+
+message GetArtifactRequest {
+    string name = 1;
+}
+
+message ListArtifactsRequest {
+}
+
+message GetArtifactBuildRequest {
+    string name = 1;
+    string artifact = 2;
+}
+
+message ListArtifactBuildsRequest {
+    // is name is set, get for a particular artifact
+    string name = 1;
+}
+
+message CreateArtifactRequest {
+    Artifact artifact = 1 [(validator.field) = {msg_exists : true}];
+    bool overwrite = 2;
+}

@@ -1,0 +1,36 @@
+syntax = "proto3";
+package darrell.api;
+option go_package = "api";
+
+import "config.proto";
+
+message Application {
+    string name = 1;
+    string chart = 2;
+    string artifact = 3;
+    // Default config for this target.
+    Config defaults = 4;
+    repeated Target targets = 5;
+}
+
+message Target {
+    string name = 1;
+    string cluster = 2;
+    string namespace = 3;
+    // Config for this target.
+	Config values = 4;
+}
+
+message GetApplicationRequest {
+    string name = 1;
+}
+    
+message ListApplicationRequest {
+
+}
+
+message ApplicationList {
+    repeated Application items = 1;
+}
+
+

@@ -1,0 +1,32 @@
+syntax = "proto3";
+package darrell.api;
+option go_package = "api";
+
+message Deployment {
+    string id = 1;
+    string application = 2;
+    string target = 3;
+    string artifact = 4;
+    string version = 5;
+    bool active = 6;
+    repeated Resource resources = 7;
+}
+
+message Resource {
+    string name = 1;
+    string cluster = 2;
+    string namespace = 3;
+    string data = 4;
+}
+
+message DeploymentList {
+    repeated Deployment items = 1;
+}
+
+message GetDeploymentRequest {
+    string id = 1;
+}
+
+message ListDeploymentsRequest {
+    string application = 1;
+}

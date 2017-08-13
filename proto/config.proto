@@ -1,0 +1,17 @@
+syntax = "proto3";
+package darrell.api;
+option go_package = "api";
+
+
+// from helm
+
+// Config supplies values to the parametrizable templates of a chart.
+message Config {
+	string raw = 1;
+	map<string,Value> values = 2;
+}
+
+// Value describes a configuration value as a string.
+message Value {
+	string value = 1;
+}

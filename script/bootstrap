@@ -1,0 +1,9 @@
+#!/bin/bash
+set -ex
+go install ./vendor/github.com/mwitkow/go-proto-validators/protoc-gen-govalidators
+#go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+#go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+go install ./vendor/github.com/golang/protobuf/protoc-gen-go
+
+go install ./vendor/github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+go install ./vendor/github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
