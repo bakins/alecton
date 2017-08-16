@@ -20,6 +20,12 @@
   revision = "1909bc2f63dc92bb931deace8b8312c4db72d12f"
 
 [[projects]]
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "064e2069ce9c359c118179501254f67d7d37ba24"
+  version = "0.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = [".","logging","logging/zap","recovery","tags","validator"]
@@ -148,6 +154,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1f6684bc83aebf01a7086080da590616c8cdb9b5b88af5bc822662616a001b69"
+  inputs-digest = "517344dc945bcec7baa4a886d4f0136ee7d4d22fbc03a1eb3e63db79e6867911"
   solver-name = "gps-cdcl"
   solver-version = 1

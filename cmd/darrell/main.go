@@ -8,7 +8,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "darrell",
+	Use:   "alecton",
 	Short: "experimental Kubernetes deployer",
 }
 
@@ -17,4 +17,14 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+var overwriteObject = false
+
+func addOverwriteFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().BoolVarP(&overwriteObject, "overwrite", "o", false, "overwrite existing object")
+}
+
+func getOverwriteObject() bool {
+	return overwriteObject
 }

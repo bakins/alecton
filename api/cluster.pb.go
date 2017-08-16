@@ -29,7 +29,7 @@ func (m *Cluster) GetName() string {
 }
 
 func init() {
-	proto.RegisterType((*Cluster)(nil), "darrell.Cluster")
+	proto.RegisterType((*Cluster)(nil), "alecton.Cluster")
 }
 
 func init() { proto.RegisterFile("cluster.proto", fileDescriptor2) }

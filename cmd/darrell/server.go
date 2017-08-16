@@ -6,10 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/bakins/darrell"
-	"github.com/bakins/darrell/memory"
+	"github.com/bakins/alecton"
+	"github.com/bakins/alecton/memory"
 	"github.com/spf13/cobra"
-	context "golang.org/x/net/context"
 )
 
 var serverAddress = "127.0.0.1:8080"
@@ -21,11 +20,16 @@ var serverCmd = &cobra.Command{
 }
 
 func runServer(cmd *cobra.Command, args []string) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	m := memory.New()
 
-	s := darrell.NewServer(ctx, m)
+	s, err := alecton.NewServer(
+		alecton.SetStorageProvider(m),
+		alecton.SetAddress(serverAddress),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -35,7 +39,7 @@ func runServer(cmd *cobra.Command, args []string) {
 		s.Stop()
 	}()
 
-	if err := s.Run(serverAddress); err != nil {
+	if err := s.Run(); err != nil {
 		log.Fatal(err)
 	}
 }

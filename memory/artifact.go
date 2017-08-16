@@ -1,17 +1,22 @@
 package memory
 
 import (
-	"github.com/bakins/darrell"
-	"github.com/bakins/darrell/api"
+	"github.com/bakins/alecton"
+	"github.com/bakins/alecton/api"
 	context "golang.org/x/net/context"
 )
+
+func artifactKey(name, version string) string {
+	return name + "/" + version
+}
 
 func (m *Memory) GetArtifact(ctx context.Context, r *api.GetArtifactRequest) (*api.Artifact, error) {
 	m.Lock()
 	defer m.Unlock()
-	a, ok := m.artifacts[r.Name]
+	key := artifactKey(r.Name, r.Version)
+	a, ok := m.artifacts[key]
 	if !ok || a == nil {
-		return nil, darrell.NewNotFoundError("artifact", r.Name)
+		return nil, alecton.NewNotFoundError("artifact", key)
 	}
 	return a, nil
 }
@@ -22,30 +27,10 @@ func (m *Memory) ListArtifacts(ctx context.Context, r *api.ListArtifactsRequest)
 
 	list := &api.ArtifactList{}
 	for _, v := range m.artifacts {
-		list.Items = append(list.Items, v)
+		if r.Name == "" || r.Name == v.Name {
+			list.Items = append(list.Items, v)
+		}
 	}
-	return list, nil
-}
-
-func (m *Memory) GetArtifactBuild(ctx context.Context, r *api.GetArtifactBuildRequest) (*api.ArtifactBuild, error) {
-	m.Lock()
-	defer m.Unlock()
-	b, ok := m.artifactBuilds[r.Name]
-	if !ok || b == nil {
-		return nil, darrell.NewNotFoundError("artifactBuild", r.Name)
-	}
-	return b, nil
-}
-
-func (m *Memory) ListArtifactBuilds(ctx context.Context, r *api.ListArtifactBuildsRequest) (*api.ArtifactBuildList, error) {
-	m.Lock()
-	defer m.Unlock()
-
-	list := &api.ArtifactBuildList{}
-	for _, v := range m.artifactBuilds {
-		list.Items = append(list.Items, v)
-	}
-
 	return list, nil
 }
 
@@ -53,7 +38,16 @@ func (m *Memory) CreateArtifact(ctx context.Context, r *api.CreateArtifactReques
 	m.Lock()
 	defer m.Unlock()
 
-	m.artifacts[r.Artifact.Name] = r.Artifact
+	key := artifactKey(r.Artifact.Name, r.Artifact.Version)
+
+	if !r.Overwrite {
+		_, ok := m.artifacts[key]
+		if ok {
+			return nil, alecton.NewAlreadyExistsError("artifact", key)
+		}
+	}
+
+	m.artifacts[key] = r.Artifact
 
 	return r.Artifact, nil
 }

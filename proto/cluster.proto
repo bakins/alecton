@@ -1,5 +1,5 @@
 syntax = "proto3";
-package darrell;
+package alecton;
 option go_package = "api";
 
 message Cluster {

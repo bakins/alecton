@@ -1,4 +1,4 @@
-package darrell
+package alecton
 
 // hack for competing context
 import (

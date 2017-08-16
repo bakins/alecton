@@ -9,7 +9,6 @@ It is generated from these files:
 	application.proto
 	artifact.proto
 	cluster.proto
-	config.proto
 	deployment.proto
 	service.proto
 
@@ -17,32 +16,29 @@ It has these top-level messages:
 	Application
 	Target
 	GetApplicationRequest
-	ListApplicationRequest
+	ListApplicationsRequest
 	ApplicationList
+	CreateApplicationRequest
 	Artifact
-	ArtifactBuild
 	ArtifactList
-	ArtifactBuildList
 	GetArtifactRequest
 	ListArtifactsRequest
-	GetArtifactBuildRequest
-	ListArtifactBuildsRequest
 	CreateArtifactRequest
 	Cluster
-	Config
-	Value
 	Deployment
 	Resource
 	DeploymentList
 	GetDeploymentRequest
 	ListDeploymentsRequest
+	CreateDeploymentRequest
 */
 package api
 
+import fmt "fmt"
 import github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
 import math "math"
+import _ "github.com/mwitkow/go-proto-validators"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -50,11 +46,7 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 func (this *Application) Validate() error {
-	if this.Defaults != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Defaults); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Defaults", err)
-		}
-	}
+	// Validation of proto3 map<> fields is unsupported.
 	for _, item := range this.Targets {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
@@ -65,17 +57,13 @@ func (this *Application) Validate() error {
 	return nil
 }
 func (this *Target) Validate() error {
-	if this.Values != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Values); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Values", err)
-		}
-	}
+	// Validation of proto3 map<> fields is unsupported.
 	return nil
 }
 func (this *GetApplicationRequest) Validate() error {
 	return nil
 }
-func (this *ListApplicationRequest) Validate() error {
+func (this *ListApplicationsRequest) Validate() error {
 	return nil
 }
 func (this *ApplicationList) Validate() error {
@@ -84,6 +72,17 @@ func (this *ApplicationList) Validate() error {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("Items", err)
 			}
+		}
+	}
+	return nil
+}
+func (this *CreateApplicationRequest) Validate() error {
+	if nil == this.Application {
+		return github_com_mwitkow_go_proto_validators.FieldError("Application", fmt.Errorf("message must exist"))
+	}
+	if this.Application != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Application); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Application", err)
 		}
 	}
 	return nil

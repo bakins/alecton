@@ -8,6 +8,7 @@ import github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-valid
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import _ "github.com/mwitkow/go-proto-validators"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -41,5 +42,8 @@ func (this *GetDeploymentRequest) Validate() error {
 	return nil
 }
 func (this *ListDeploymentsRequest) Validate() error {
+	return nil
+}
+func (this *CreateDeploymentRequest) Validate() error {
 	return nil
 }

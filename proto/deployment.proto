@@ -1,6 +1,10 @@
 syntax = "proto3";
-package darrell.api;
+package alecton.api;
+import "github.com/mwitkow/go-proto-validators/validator.proto";
 option go_package = "api";
+
+// Deployment is analogous to a release version in helm.
+// ie, a singular released artifact + manifests.
 
 message Deployment {
     string id = 1;
@@ -8,13 +12,16 @@ message Deployment {
     string target = 3;
     string artifact = 4;
     string version = 5;
-    bool active = 6;
+    // status
+    Code code = 6;
+    // rendered templates
     repeated Resource resources = 7;
 }
 
+// Resource is a fully rendered Kubernetes manifest.
 message Resource {
     string name = 1;
-    string cluster = 2;
+    string kind = 2;
     string namespace = 3;
     string data = 4;
 }
@@ -28,5 +35,38 @@ message GetDeploymentRequest {
 }
 
 message ListDeploymentsRequest {
+    // If set, only return deployments for this application
     string application = 1;
 }
+
+message CreateDeploymentRequest {
+    string application = 2 [(validator.field) = {msg_exists : true}];
+    string target = 3 [(validator.field) = {msg_exists : true}];
+    string artifact = 4 [(validator.field) = {msg_exists : true}];
+    string version = 5 [(validator.field) = {msg_exists : true}];
+    // actually attempt to deploy the deployment
+    bool activate = 6;
+}
+
+enum Code {
+    // Status_UNKNOWN indicates that a release is in an uncertain state.
+    UNKNOWN = 0;
+    // Status_DEPLOYED indicates that the release has been pushed to Kubernetes.
+    DEPLOYED = 1;
+    // Status_DELETED indicates that a release has been deleted from Kubermetes.
+    DELETED = 2;
+    // Status_SUPERSEDED indicates that this release object is outdated and a newer one exists.
+    SUPERSEDED = 3;
+    // Status_FAILED indicates that the release was not successfully deployed.
+    FAILED = 4;
+    // Status_DELETING indicates that a delete operation is underway.
+    DELETING = 5;
+    // Status_PENDING_INSTALL indicates that an install operation is underway.
+    PENDING_INSTALL = 6;
+    // Status_PENDING_UPGRADE indicates that an upgrade operation is underway.
+    PENDING_UPGRADE = 7;
+    // Status_PENDING_ROLLBACK indicates that an rollback operation is underway.
+    PENDING_ROLLBACK = 8;
+}
+
+ 

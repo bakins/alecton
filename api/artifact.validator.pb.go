@@ -18,20 +18,7 @@ var _ = math.Inf
 func (this *Artifact) Validate() error {
 	return nil
 }
-func (this *ArtifactBuild) Validate() error {
-	return nil
-}
 func (this *ArtifactList) Validate() error {
-	for _, item := range this.Items {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Items", err)
-			}
-		}
-	}
-	return nil
-}
-func (this *ArtifactBuildList) Validate() error {
 	for _, item := range this.Items {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
@@ -45,12 +32,6 @@ func (this *GetArtifactRequest) Validate() error {
 	return nil
 }
 func (this *ListArtifactsRequest) Validate() error {
-	return nil
-}
-func (this *GetArtifactBuildRequest) Validate() error {
-	return nil
-}
-func (this *ListArtifactBuildsRequest) Validate() error {
 	return nil
 }
 func (this *CreateArtifactRequest) Validate() error {
