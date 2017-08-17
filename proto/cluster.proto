@@ -1,8 +1,0 @@
-syntax = "proto3";
-package alecton;
-option go_package = "api";
-
-message Cluster {
-    string name = 1;
-    // auth info? raw kubeconfig?
-}

@@ -1,0 +1,225 @@
+// API for a deployment service.
+// It's easier for me to express an API as protobuf/service
+// definitions. grpc-gateway would be used, so HTTP/1.1 and
+// json would work.  A simple browser API could be provided.
+// This API is meant for users - both systems and humans - 
+// to easily deploy images.
+// 
+// The envisioned flow is that the build system would push
+// images to a registry and notify this service using CreateImage.
+// Another step in the pipeline would then use DeployApplication
+// to actual deploy.
+//
+// The details of the chart need not be known to the user of this API
+// This also allows the user to create applications easily
+// by using a pre-selected froup of charts.
+
+syntax = "proto3";
+package alecton.api;
+import "google/api/annotations.proto";
+import "hapi/release/release.proto";
+import "github.com/mwitkow/go-proto-validators/validator.proto";
+option go_package = "api";
+
+// Cluster represents a single Kubernetes cluster.
+message Cluster {
+    // Name is the user-freindly name. Deploy targets reference this.
+    string name = 1;
+    // Context is the context as defined in a kubeconfig.
+    string context = 2;
+}
+
+// Image is a single container image.
+// Images are immutable.
+message Image {
+    // Name is the user-freindly name. Multiple images with the same
+    // name are allowed as these would vary on version. Images with
+    // same name should reference the same application code.
+    // Applications reference this name.
+    string name = 1 [(validator.field) = {msg_exists : true}];
+    // Version is the verion of this image. This is usually the tag.
+    string version = 2 [(validator.field) = {msg_exists : true}];
+    // Image is the full registry reference to the image.
+    string image = 3 [(validator.field) = {msg_exists : true}];
+}
+
+// Target is a deployment target.
+message Target {
+    // Name of the target. As targets are application specific, this
+    // only needs to be unique in the application.
+    string name = 1 [(validator.field) = {msg_exists : true}];
+    // Cluster is the target cluster. This must match a defined cluster.
+    string cluster = 2 [(validator.field) = {msg_exists : true}];
+    // Namespace within the cluster.
+    string namespace = 3 [(validator.field) = {msg_exists : true}];
+    // Values are the values to be merged for this target.
+    map <string,string> values = 4;
+}
+
+// Application is a "wrapper" for a Chart, deployment targets,
+// and values. 
+message Application {
+    // Name must be unique.
+     string name = 1 [(validator.field) = {msg_exists : true}];
+    // Chart is the chart to use when deploying this application.
+    string chart = 2 [(validator.field) = {msg_exists : true}];
+    // Image is the image for this application.
+    // On deployment, we set .Values.Image equal to the referenced image.
+    // This makes the normal use case of single image apps more convenient. 
+    // For multi-image charts, the other images should have sensible defaults
+    // and use a different .Values field if needed. 
+    string image  = 3 [(validator.field) = {msg_exists : true}];
+    // Deployment targets for this application.
+    repeated Target targets = 4;
+}
+
+message GetImageRequest {
+    string name = 1 [(validator.field) = {msg_exists : true}];
+    string version = 2 [(validator.field) = {msg_exists : true}];
+}
+
+// ListImages and optionally filter.
+message ListImagesRequest {
+    string name = 1;
+    string version = 2;
+}
+
+message ListImagesResponse {
+    repeated Image images = 1;
+}
+
+// ListApplications and optionally filter.
+message ListApplicationsRequest {
+    string chart = 1;
+    string image = 2;
+}
+
+message ListApplicationsResponse {
+    repeated Application applications = 1;
+}
+
+message GetApplicationRequest {
+    string name = 1 [(validator.field) = {msg_exists : true}];
+}
+
+// Deploy an application to a cluster.
+message DeployRequest {
+    string application = 1 [(validator.field) = {msg_exists : true}];
+    string target = 2 [(validator.field) = {msg_exists : true}];
+    // image version
+    string version = 3 [(validator.field) = {msg_exists : true}];
+}
+
+message DeployResponse {
+    // helm release
+    hapi.release.Release release = 1;
+}
+
+// Rollback to a previous release.
+message RollbackRequest {
+    string application = 1 [(validator.field) = {msg_exists : true}];
+    string target = 2 [(validator.field) = {msg_exists : true}];
+    int32 version = 4 [(validator.field) = {msg_exists : true}];
+}
+
+message RollbackResponse {
+	hapi.release.Release release = 1;
+}
+
+// list releases for an application/target
+message ListReleasesRequest {
+    string application = 1 [(validator.field) = {msg_exists : true}];
+    string target = 2 [(validator.field) = {msg_exists : true}];
+}
+
+message ListReleasesResponse {
+    repeated hapi.release.Release releases = 1;
+}
+
+// DeployService provides a simple wrapper for deploying helm charts 
+// for applications.
+service DeployService {
+
+    // CreateImage creates an image. It is not possible to overwrite an image.
+    rpc CreateImage(Image) returns (Image) {
+        option (google.api.http) = {
+            post: "/v1/images"
+            body: "*"
+        };
+    }
+
+
+    rpc ListImages(ListImagesRequest) returns (ListImagesResponse) {
+         // query strings are used for fields
+        option (google.api.http) = {
+            get: "/v1/images"
+        };
+    }
+
+    rpc GetImage(GetImageRequest) returns (Image) {
+        option (google.api.http) = {
+            get: "/v1/images/{name}/{version}"
+        };
+    }
+
+    rpc CreateApplication(Application) returns (Application) {
+        option (google.api.http) = {
+            post: "/v1/applications"
+            body: "*"
+        };
+    }
+
+    // must pass in complete application. there is no merge performed.
+    rpc UpdateApplication(Application) returns (Application) {
+        option (google.api.http) = {
+            put: "/v1/applications"
+            body: "*"
+        };
+    }
+
+    rpc ListApplications(ListApplicationsRequest) returns (ListApplicationsResponse) {
+         // query strings are used for fields
+        option (google.api.http) = {
+            get: "/v1/applications"
+        };
+    }
+
+    rpc GetApplication(GetApplicationRequest) returns (Application) {
+         // query strings are used for fields
+        option (google.api.http) = {
+            get: "/v1/applications/{name}"
+        };
+    }
+
+    // deploy will get the image referenced and perform the equivalent of:
+    // helm upgrade --install --kube-context=[cluster-context] \
+    //     --namespace=[target-namespace] \
+    //     --reset-values \
+    //     --set=[target-values] \
+    //     [application-name]-[target-name] [application-chart]
+    rpc DeployApplication(DeployRequest) returns (DeployResponse) {
+         option (google.api.http) = {
+            post: "/v1/applications/deploy"
+            body: "*"
+        };
+    }
+
+    // performs the equivalent of:
+    // helm rollback --kube-context=[cluster-context] \
+    //     [application-name]-[target-name] [REVISION]
+    rpc RollbackApplication(RollbackRequest) returns (RollbackResponse) {
+         option (google.api.http) = {
+            post: "/v1/applications/rollback"
+            body: "*"
+        };
+    }
+
+    // performs the equivalent of:
+    // helm history --kube-context=[cluster-context] \
+    //    [application-name]-[target-name]
+    rpc ListReleases(ListReleasesRequest) returns (ListReleasesResponse) {
+         option (google.api.http) = {
+            get: "/v1/releases/{application}/{target}"
+        };
+    }
+}

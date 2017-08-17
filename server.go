@@ -30,10 +30,13 @@ type Server struct {
 	cancel  context.CancelFunc
 	grpc    *grpc.Server
 	server  *http.Server
-	storage StorageProvider
 	address string
+	StorageProvider
+	chart  ChartProvider
+	deploy DeployProvider
 }
 
+// NewServer creates a new server.
 func NewServer(options ...ServerOptionFunc) (*Server, error) {
 	s := &Server{
 		address: "127.0.0.1:8080",
@@ -72,7 +75,7 @@ func SetContext(ctx context.Context) ServerOptionFunc {
 // SetStorageProvider sets the storage provide. There is no default
 func SetStorageProvider(p StorageProvider) ServerOptionFunc {
 	return func(s *Server) error {
-		s.storage = p
+		s.StorageProvider = p
 		return nil
 	}
 }
@@ -103,7 +106,8 @@ func (s *Server) Run() error {
 		),
 	)
 
-	api.RegisterApplicationServiceServer(s.grpc, s)
+	api.RegisterDeployServiceServer(s.grpc, s)
+
 	// not exactly sure what this is used for, but examples
 	// always do it:
 	// https://godoc.org/google.golang.org/grpc/reflection
@@ -117,7 +121,7 @@ func (s *Server) Run() error {
 	}
 
 	// TODO: need to determine if we can actually connect to localhost
-	if err := api.RegisterApplicationServiceHandlerFromEndpoint(s.ctx, gwmux, net.JoinHostPort("127.0.0.1", port), []grpc.DialOption{grpc.WithInsecure()}); err != nil {
+	if err := api.RegisterDeployServiceHandlerFromEndpoint(s.ctx, gwmux, net.JoinHostPort("127.0.0.1", port), []grpc.DialOption{grpc.WithInsecure()}); err != nil {
 		return errors.Wrap(err, "failed to register grpc gateway")
 	}
 
@@ -164,43 +168,4 @@ func NewDefaultLogger() (*zap.Logger, error) {
 		return nil, errors.Wrap(err, "failed to create logger")
 	}
 	return l, nil
-}
-
-func (s *Server) GetApplication(ctx context.Context, r *api.GetApplicationRequest) (*api.Application, error) {
-	return s.storage.GetApplication(ctx, r)
-}
-
-func (s *Server) ListApplications(ctx context.Context, r *api.ListApplicationsRequest) (*api.ApplicationList, error) {
-	return s.storage.ListApplications(ctx, r)
-}
-
-func (s *Server) CreateApplication(ctx context.Context, r *api.CreateApplicationRequest) (*api.Application, error) {
-	return s.storage.CreateApplication(ctx, r)
-}
-
-func (s *Server) GetArtifact(ctx context.Context, r *api.GetArtifactRequest) (*api.Artifact, error) {
-	return s.storage.GetArtifact(ctx, r)
-}
-
-func (s *Server) ListArtifacts(ctx context.Context, r *api.ListArtifactsRequest) (*api.ArtifactList, error) {
-	return s.storage.ListArtifacts(ctx, r)
-}
-
-func (s *Server) CreateArtifact(ctx context.Context, r *api.CreateArtifactRequest) (*api.Artifact, error) {
-	return s.storage.CreateArtifact(ctx, r)
-}
-
-func (s *Server) GetDeployment(ctx context.Context, r *api.GetDeploymentRequest) (*api.Deployment, error) {
-	return s.storage.GetDeployment(ctx, r)
-}
-
-func (s *Server) ListDeployments(ctx context.Context, r *api.ListDeploymentsRequest) (*api.DeploymentList, error) {
-	return s.storage.ListDeployments(ctx, r)
-}
-
-func (s *Server) CreateDeployment(ctx context.Context, r *api.CreateDeploymentRequest) (*api.Deployment, error) {
-	// TODO: after creating deployment, then actually try to
-	// deploy it if activate is true
-	// need storage to be able to set status
-	return s.storage.CreateDeployment(ctx, r)
 }

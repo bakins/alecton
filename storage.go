@@ -8,27 +8,21 @@ import (
 
 // StorageProvider provides underlying storage
 type StorageProvider interface {
-	GetArtifact(context.Context, *api.GetArtifactRequest) (*api.Artifact, error)
-	ListArtifacts(context.Context, *api.ListArtifactsRequest) (*api.ArtifactList, error)
-	CreateArtifact(context.Context, *api.CreateArtifactRequest) (*api.Artifact, error)
+	CreateImage(context.Context, *api.Image) (*api.Image, error)
+	ListImages(context.Context, *api.ListImagesRequest) (*api.ListImagesResponse, error)
+	GetImage(ctx context.Context, r *api.GetImageRequest) (*api.Image, error)
+	CreateApplication(context.Context, *api.Application) (*api.Application, error)
+	UpdateApplication(context.Context, *api.Application) (*api.Application, error)
+	ListApplications(context.Context, *api.ListApplicationsRequest) (*api.ListApplicationsResponse, error)
 	GetApplication(context.Context, *api.GetApplicationRequest) (*api.Application, error)
-	ListApplications(context.Context, *api.ListApplicationsRequest) (*api.ApplicationList, error)
-	CreateApplication(context.Context, *api.CreateApplicationRequest) (*api.Application, error)
-	GetDeployment(context.Context, *api.GetDeploymentRequest) (*api.Deployment, error)
-	ListDeployments(context.Context, *api.ListDeploymentsRequest) (*api.DeploymentList, error)
-	CreateDeployment(ctx context.Context, r *api.CreateDeploymentRequest) (*api.Deployment, error)
-	// UpdateDeployment is used by the server to store status about the deployment
-	// the full deployment is passed in.
-	UpdateDeployment(ctx context.Context, r *api.Deployment) (*api.Deployment, error)
 }
-
-// XXX: ^^^ is a large interface, but all these functions really
-// go together
 
 var storageProviders = map[string]StorageProviderCreateFunc{}
 
+// StorageProviderCreateFunc is used by config to create a provider
 type StorageProviderCreateFunc func(map[string]interface{}) (StorageProvider, error)
 
+// RegisterStorageProvider is used by storage providers to register themselve
 func RegisterStorageProvider(name string, p StorageProviderCreateFunc) {
 	storageProviders[name] = p
 }
