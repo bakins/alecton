@@ -13,10 +13,10 @@ import (
 
 // DeployProvider provides functions for interacing with helm or similar.
 type DeployProvider interface {
-	InstallRelease(context.Context, *services.InstallReleaseRequest) (*release.Release, error)
-	UpdateRelease(context.Context, *services.UpdateReleaseRequest) (*release.Release, error)
-	RollbackRelease(context.Context, *services.RollbackReleaseRequest) (*release.Release, error)
-	ReleaseHistory(context.Context, *services.GetHistoryRequest) ([]*release.Release, error)
+	InstallRelease(context.Context, cluster string, *services.InstallReleaseRequest) (*release.Release, error)
+	UpdateRelease(context.Context, cluster string, *services.UpdateReleaseRequest) (*release.Release, error)
+	RollbackRelease(context.Context, cluster string, *services.RollbackReleaseRequest) (*release.Release, error)
+	ReleaseHistory(context.Context, cluster string, *services.GetHistoryRequest) ([]*release.Release, error)
 }
 
 var deployProviders = map[string]DeployProviderCreateFunc{}

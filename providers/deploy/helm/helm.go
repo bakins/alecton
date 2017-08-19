@@ -4,35 +4,70 @@ import (
 	"fmt"
 
 	"github.com/bakins/alecton"
+	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/proto/hapi/release"
 	"k8s.io/helm/pkg/proto/hapi/services"
 )
 
+type clusterConfig struct {
+	Address string
+	// TODO: tls?
+	client services.ReleaseServiceClient
+}
+
+type helmConfig struct {
+	Clusters map[string]clusterConfig
+}
+
+// Helm is a simple client for tiller
 type Helm struct {
-	client *helm.Client
+	helmConfig
 }
 
-func New(map[string]interface{}) *Helm {
-	return &Helm{client: helm.NewClient()}
+func newGrpcClient(address string) (services.ReleaseServiceClient, error) {
+	// TODO: timeout
+	conn, err := grpc.DialContext(context.Background(), address, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+
+	return services.NewReleaseServiceClient(conn), nil
 }
 
-func (h *Helm) InstallRelease(ctx context.Context, req *services.InstallReleaseRequest) (*release.Release, error) {
+// New creates a deploy provider using help
+func New(c *helmConfig) (*Helm, error) {
+	for k, v := range c.Clusters {
+		if v.Address == "" {
+			return nil, errors.Errorf("address is required for cluster %s", k)
+			client, err := newGrpcClient(v.Address)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to create client for cluster %s", k)
+			}
+			v.client = client
+		}
+	}
+	return &Helm{*c}, nil
+}
 
-	// helm client doesn't directly expose passing in the
-	// grpc messages, so we have to use the exported functions.
-	res, err := h.client.InstallReleaseFromChart(
-		req.Chart,
-		req.Namespace,
-		helm.InstallTimeout(req.Timeout),
-		helm.ReleaseName(req.Name),
-		helm.ValueOverrides([]byte(req.Values.Raw)),
-	)
+func (h *Helm) getClient(cluster string) (services.ReleaseServiceClient, error) {
+	c, ok := h.Clusters[cluster]
+	if !ok {
+		return nil, errors.Errorf("unknown cluster %s", cluster)
+	}
+	return c, nil
+}
 
+func (h *Helm) InstallRelease(ctx context.Context, cluster string, req *services.InstallReleaseRequest) (*release.Release, error) {
+	client, err := h.getClient(cluster)
+	if err != nil {
+		return nil, err
+	}
+	res, err := client.InstallRelease(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -40,15 +75,13 @@ func (h *Helm) InstallRelease(ctx context.Context, req *services.InstallReleaseR
 	return res.Release, nil
 }
 
-func (h *Helm) UpdateRelease(ctx context.Context, req *services.UpdateReleaseRequest) (*release.Release, error) {
-	res, err := h.client.UpdateReleaseFromChart(
-		req.Name,
-		req.Chart,
-		helm.ResetValues(true),
-		helm.UpdateValueOverrides([]byte(req.Values.Raw)),
-		helm.UpgradeTimeout(req.Timeout),
-	)
+func (h *Helm) UpdateRelease(ctx context.Context, cluster string, req *services.UpdateReleaseRequest) (*release.Release, error) {
+	client, err := h.getClient(cluster)
+	if err != nil {
+		return nil, err
+	}
 
+	res, err := client.UpdateRelease(req)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +89,13 @@ func (h *Helm) UpdateRelease(ctx context.Context, req *services.UpdateReleaseReq
 	return res.Release, nil
 }
 
-func (h *Helm) RollbackRelease(ctx context.Context, req *services.RollbackReleaseRequest) (*release.Release, error) {
-	res, err := h.client.RollbackRelease(
-		req.Name,
-		helm.RollbackTimeout(req.Timeout),
-		helm.RollbackVersion(req.Version),
-	)
+func (h *Helm) RollbackRelease(ctx context.Context, cluster string, req *services.RollbackReleaseRequest) (*release.Release, error) {
+	client, err := h.getClient(cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := client.RollbackRelease(req)
 
 	if err != nil {
 		return nil, err
@@ -71,11 +105,12 @@ func (h *Helm) RollbackRelease(ctx context.Context, req *services.RollbackReleas
 }
 
 func (h *Helm) ReleaseHistory(ctx context.Context, req *services.GetHistoryRequest) ([]*release.Release, error) {
-	res, err := h.client.ReleaseHistory(
-		req.Name,
-		helm.WithMaxHistory(req.Max),
-	)
+	client, err := h.getClient(cluster)
+	if err != nil {
+		return nil, err
+	}
 
+	res, err := client.GetHistory(req)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +124,11 @@ func (h *Helm) ReleaseHistory(ctx context.Context, req *services.GetHistoryReque
 }
 
 func provider(config map[string]interface{}) (alecton.DeployProvider, error) {
-	return New(config), nil
+	var c helmConfig
+	if err := alecton.ProviderConfigDecode(config, &c); err != nil {
+		return errors.Wrap(err, "failed to deconde helm config")
+	}
+	return New(&config)
 }
 
 func init() {
