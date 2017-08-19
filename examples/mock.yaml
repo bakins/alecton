@@ -6,4 +6,4 @@ chart:
 storage:
   provider: memory
 deploy:
-  provider: mock
+  provider: helm

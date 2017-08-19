@@ -94,10 +94,11 @@ func (s *Server) DeployApplication(ctx context.Context, r *api.DeployRequest) (*
 	// our deployment specific values. these have highest precendence
 	// and cannot be overwritten
 	values["Deploy"] = map[string]interface{}{
-		"Image":   image.Image,
-		"Version": image.Version,
 		"App":     a.Name,
+		"Cluster": target.Cluster,
+		"Image":   image.Image,
 		"Target":  target.Name,
+		"Version": image.Version,
 	}
 
 	data, err := yaml.Marshal(values)
@@ -128,7 +129,7 @@ func (s *Server) DeployApplication(ctx context.Context, r *api.DeployRequest) (*
 			Values:    &chart.Config{Raw: string(data)},
 			Name:      getReleaseName(target.Namespace, a.Name),
 			Namespace: target.Namespace,
-			Timeout:   5, //todo confugurable?
+			Timeout:   5, //todo configurable?
 			Wait:      false,
 		}
 
