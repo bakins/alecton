@@ -36,7 +36,7 @@ func getDeployProvider(config map[string]interface{}) (DeployProvider, error) {
 	}
 	p, ok := deployProviders[name]
 	if !ok || p == nil {
-		return nil, errors.Wrapf(err, "no deploy provider found for \"%s\"", name)
+		return nil, errors.Errorf("no deploy provider found for \"%s\"", name)
 	}
 
 	s, err := p(config)
@@ -82,14 +82,23 @@ func (s *Server) DeployApplication(ctx context.Context, r *api.DeployRequest) (*
 	// this is a bit cheesy, but is an easy way to do nested maps without
 	// needing to do that in protos
 	values := map[string]interface{}{}
-	for k, v := range target.Values {
-		value := k + "=" + v
-		if err := strvals.ParseInto(value, values); err != nil {
-			return nil, NewInvalidArgumentError("values", value)
+	for _, source := range []map[string]string{a.Values, target.Values} {
+		for k, v := range source {
+			value := k + "=" + v
+			if err := strvals.ParseInto(value, values); err != nil {
+				return nil, NewInvalidArgumentError("values", value)
+			}
 		}
 	}
 
-	values["Image"] = image.Image
+	// our deployment specific values. these have highest precendence
+	// and cannot be overwritten
+	values["Deploy"] = map[string]interface{}{
+		"Image":   image.Image,
+		"Version": image.Version,
+		"App":     a.Name,
+		"Target":  target.Name,
+	}
 
 	data, err := yaml.Marshal(values)
 	if err != nil {

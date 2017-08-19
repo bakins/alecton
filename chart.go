@@ -22,16 +22,15 @@ func RegisterChartProvider(name string, p ChartProviderCreateFunc) {
 	chartProviders[name] = p
 }
 
-func getchartProvider(config map[string]interface{}) (ChartProvider, error) {
+func getChartProvider(config map[string]interface{}) (ChartProvider, error) {
 	name, err := getProviderName(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to determine chart provider")
 	}
 	p, ok := chartProviders[name]
 	if !ok || p == nil {
-		return nil, errors.Wrapf(err, "no chart provider found for \"%s\"", name)
+		return nil, errors.Errorf("no chart provider found for \"%s\"", name)
 	}
-
 	s, err := p(config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to create chart provider for \"%s\"", name)

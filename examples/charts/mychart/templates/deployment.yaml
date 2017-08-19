@@ -1,0 +1,23 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.Deploy.App }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.Deploy.App }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.Deploy.App }}
+    spec:
+      containers:
+        - name: nginx
+          image: "{{ .Values.Deploy.Image }}"
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+# TESTING{{ .Values.some }}
+# other: {{ .Values.some.nested.other }}

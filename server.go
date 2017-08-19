@@ -52,6 +52,18 @@ func NewServer(options ...ServerOptionFunc) (*Server, error) {
 		s.ctx, s.cancel = context.WithCancel(context.Background())
 	}
 
+	if s.StorageProvider == nil {
+		return nil, errors.New("storage provider is required")
+	}
+
+	if s.chart == nil {
+		return nil, errors.New("chart provider is required")
+	}
+
+	if s.deploy == nil {
+		return nil, errors.New("deploy provider is required")
+	}
+
 	return s, nil
 }
 
@@ -76,6 +88,22 @@ func SetContext(ctx context.Context) ServerOptionFunc {
 func SetStorageProvider(p StorageProvider) ServerOptionFunc {
 	return func(s *Server) error {
 		s.StorageProvider = p
+		return nil
+	}
+}
+
+// SetChartProvider sets the storage provide. There is no default
+func SetChartProvider(p ChartProvider) ServerOptionFunc {
+	return func(s *Server) error {
+		s.chart = p
+		return nil
+	}
+}
+
+// SetDeployProvider sets the storage provide. There is no default
+func SetDeployProvider(p DeployProvider) ServerOptionFunc {
+	return func(s *Server) error {
+		s.deploy = p
 		return nil
 	}
 }

@@ -34,7 +34,7 @@ func getStorageProvider(config map[string]interface{}) (StorageProvider, error) 
 	}
 	p, ok := storageProviders[name]
 	if !ok || p == nil {
-		return nil, errors.Wrapf(err, "no storage provider found for \"%s\"", name)
+		return nil, errors.Errorf("no storage provider found for \"%s\"", name)
 	}
 
 	s, err := p(config)

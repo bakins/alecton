@@ -53,6 +53,7 @@ message Target {
     // Namespace within the cluster.
     string namespace = 3 [(validator.field) = {msg_exists : true}];
     // Values are the values to be merged for this target.
+    // these have highest precedence.
     map <string,string> values = 4;
 }
 
@@ -71,6 +72,9 @@ message Application {
     string image  = 3 [(validator.field) = {msg_exists : true}];
     // Deployment targets for this application.
     repeated Target targets = 4;
+     // default values for this application. These
+     // override those in the chart.
+    map <string,string> values = 5;
 }
 
 message GetImageRequest {

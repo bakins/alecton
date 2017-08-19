@@ -59,6 +59,7 @@ func (this *Application) Validate() error {
 			}
 		}
 	}
+	// Validation of proto3 map<> fields is unsupported.
 	return nil
 }
 func (this *GetImageRequest) Validate() error {

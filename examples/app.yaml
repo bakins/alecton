@@ -1,0 +1,12 @@
+---
+name: myapp
+chart: mychart
+image: nginx
+values:
+  some.nested.value: 77
+targets:
+- name: dev
+  cluster: foo
+  values:
+    replicaCount: 5
+    some.nested.value: 14

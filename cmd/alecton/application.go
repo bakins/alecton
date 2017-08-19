@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 
 	"github.com/bakins/alecton/api"
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 )
 
@@ -51,27 +53,34 @@ func runApplicationGet(cmd *cobra.Command, args []string) {
 }
 
 var applicationCreateCmd = &cobra.Command{
-	Use:   "create NAME CHART ARTIFACT",
-	Short: "create application",
+	Use:   "create FILE",
+	Short: "create application from YAML file",
 	Run:   runApplicationCreate,
 }
 
 func runApplicationCreate(cmd *cobra.Command, args []string) {
-	if len(args) != 3 {
-		log.Fatal("need NAME, CHART, and ARTIFACT")
+	if len(args) != 1 {
+		log.Fatal("need YAML file")
 	}
 	c, ctx := newClient()
-	a := &api.Application{
-		Name:  args[0],
-		Chart: args[1],
-		Image: args[2],
-	}
 
-	a, err := c.CreateApplication(ctx, a)
+	data, err := ioutil.ReadFile(args[0])
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(a)
+
+	var a api.Application
+
+	if err := yaml.Unmarshal(data, &a); err != nil {
+		log.Fatal(err)
+	}
+
+	// todo verify
+	app, err := c.CreateApplication(ctx, &a)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(app)
 }
 
 func init() {

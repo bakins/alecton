@@ -15,13 +15,9 @@ type Config struct {
 	// listen address
 	Address       string
 	StorageConfig map[string]interface{} `json:"storage"`
-	//ChartsConfig map[string]interface{} `json:"charts"`
+	ChartConfig   map[string]interface{} `json:"chart"`
+	DeployConfig  map[string]interface{} `json:"deploy"`
 }
-
-// ChartProvider provides the chart
-//type ChartProvider interface {
-//	Load(string) *chart.Chart
-//}
 
 // ProviderConfigDecode will decode a generic config into a
 // specific config
@@ -29,8 +25,8 @@ func ProviderConfigDecode(in map[string]interface{}, rawVal interface{}) error {
 	return mapstructure.Decode(in, rawVal)
 }
 
-// ServerFromConfigFile creates a server from a config file
-func ServerFromConfigFile(filename string) (*Server, error) {
+// NewServerFromConfigFile creates a server from a config file
+func NewServerFromConfigFile(filename string) (*Server, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read file %s", filename)
@@ -41,22 +37,39 @@ func ServerFromConfigFile(filename string) (*Server, error) {
 		return nil, errors.Wrapf(err, "failed to parse file %s", filename)
 	}
 
-	return ServerFromConfig(&c)
+	return NewServerFromConfig(&c)
 }
 
-// ServerFromConfig creates a Server from a Config
-func ServerFromConfig(c *Config) (*Server, error) {
+// NewServerFromConfig creates a Server from a Config
+func NewServerFromConfig(c *Config) (*Server, error) {
 	opts := []ServerOptionFunc{}
 
 	if c.Address != "" {
 		opts = append(opts, SetAddress(c.Address))
 	}
+
 	if c.StorageConfig != nil {
 		s, err := getStorageProvider(c.StorageConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get storage provider")
 		}
 		opts = append(opts, SetStorageProvider(s))
+	}
+
+	if c.ChartConfig != nil {
+		prov, err := getChartProvider(c.ChartConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get chart provider")
+		}
+		opts = append(opts, SetChartProvider(prov))
+	}
+
+	if c.DeployConfig != nil {
+		prov, err := getDeployProvider(c.DeployConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get deploy provider")
+		}
+		opts = append(opts, SetDeployProvider(prov))
 	}
 
 	return NewServer(opts...)

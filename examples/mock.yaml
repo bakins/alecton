@@ -1,0 +1,9 @@
+---
+address: :8080
+chart:
+  provider: dir
+  dir: ./examples/charts
+storage:
+  provider: memory
+deploy:
+  provider: mock
